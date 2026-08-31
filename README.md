@@ -17,10 +17,8 @@ python -m quant_platform.run_experiment --timeframe 1h --fast 20 --slow 100
 3. 用 `SmaCrossStrategy` 產生 signal，丟進 `BacktestBroker` 跑出
    Signal → Position → Order/Fill → PnL 的完整事件鏈（`backtest/`）。
 4. 計算績效指標，**包含 Sharpe 的 bootstrap 信賴區間**，不是只有 point estimate
-   （`backtest/metrics.py`，對應對話文件第7節）。
 5. 把這次 run 的完整身分 —— 用了哪個 dataset checksum、哪個 strategy version
    （用程式碼 hash 當 fingerprint）、哪組 cost model —— 寫進 SQLite Registry
-   （`registry/`，對應文件第9節 lineage 設計）。
 6. 產生一份 markdown research report（`report/`）。
 
 重跑同樣的策略/參數會重用同一個 `strategy_version`；重跑同一份底層資料
@@ -74,16 +72,6 @@ probability。
 （一開始就是負的）、BH 修正後沒有任何 trial 顯著——這是**正確且預期**的結果，
 代表 falsification 機制有把關到，不是隨便放行漂亮數字。
 
-## 架構對照（vs. 今天的設計文件）
-
-| 文件章節 | 對應程式 |
-|---|---|
-| 4.1 Market Data Layer | `data/loader.py`, `data/synth.py` |
-| 4.2/4.3 Strategy + Simulator | `strategy/base.py`, `backtest/simulator.py`, `backtest/broker.py` |
-| 第7節 Uncertainty（不只存 point estimate）| `backtest/metrics.py` 的 `bootstrap_sharpe_ci` |
-| 第9節 Strategy Registry / Lineage | `registry/db.py`, `registry/repository.py` |
-| Phase 3 Robustness/Falsification Engine | `robustness/`（param perturbation, cost stress, execution delay, sample perturbation, BH correction）|
-| Phase 0-8 protocol | 目前做到 P0（可測試 hypothesis）雛形 + P1 基本防線 + P3 的四項穩健性檢查雛形，P2（更完整的統計檢定框架）跟 P4-P8 尚未開始 |
 
 ## 已經內建的 P1 (Data & Causality Integrity) 防線
 
