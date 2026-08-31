@@ -1,0 +1,6 @@
+pandas>=2.0
+numpy>=1.24
+
+# 有網路的環境建議加裝：
+# pyarrow      # 換回 parquet 儲存格式
+# ccxt         # 接真實交易所資料

@@ -1,0 +1,77 @@
+# Robustness Report: sma_cross (fast20_slow100)
+
+- base_run_id: `run_c7e472287168`
+- base params: `{'fast': 20, 'slow': 100}`
+- base Sharpe: -1.34
+
+## 1. Parameter Perturbation
+
+共測試 9 組參數（各參數獨立 ±10%/±20% 擾動）：
+
+| 擾動 | 參數 | Sharpe | p-value (H0: Sharpe<=0) |
+|---|---|---|---|
+| fast=-20% | {'fast': 16, 'slow': 100} | -1.80 | 1.000 |
+| fast=-10% | {'fast': 18, 'slow': 100} | -2.42 | 1.000 |
+| baseline | {'fast': 20, 'slow': 100} | -1.34 | 1.000 |
+| fast=+10% | {'fast': 22, 'slow': 100} | -1.23 | 1.000 |
+| fast=+20% | {'fast': 24, 'slow': 100} | -1.25 | 1.000 |
+| slow=-20% | {'fast': 20, 'slow': 80} | -1.29 | 1.000 |
+| slow=-10% | {'fast': 20, 'slow': 90} | -2.48 | 1.000 |
+| slow=+10% | {'fast': 20, 'slow': 110} | -0.82 | 1.000 |
+| slow=+20% | {'fast': 20, 'slow': 120} | -0.37 | 1.000 |
+
+- 有效 trial: 9（跳過 0 組無效參數）
+- Sharpe 範圍: [-2.48, -0.37]，標準差: 0.69
+- 判讀：標準差越小、範圍越窄，代表績效在參數鄰域內越平滑穩定；如果 baseline 附近的組合表現差異巨大，通常是曲線擬合的警訊。
+
+## 2. Cost Stress
+
+| 成本倍數 | Commission (bps) | Slippage (bps) | Sharpe |
+|---|---|---|---|
+| 1x | 5.00 | 2.00 | -1.34 |
+| 1.5x | 7.50 | 3.00 | -1.39 |
+| 2x | 10.00 | 4.00 | -1.45 |
+| 3x | 15.00 | 6.00 | -1.56 |
+
+- Breakeven 倍數: 1x
+- 判讀：這個策略能撐到成本放大幾倍還維持正 Sharpe。倍數越低代表獲利越薄，越可能在真實交易所的實際滑價下消失。
+
+## 3. Execution Delay Sensitivity
+
+| 額外延遲 (bars) | Sharpe |
+|---|---|
+| +0 | -1.34 |
+| +1 | -1.42 |
+| +2 | -1.98 |
+| +3 | -2.44 |
+
+- 判讀：如果 Sharpe 隨延遲增加而快速崩壞，代表策略高度依賴精確的進出場時機，實盤環境（網路延遲、排程間隔）很難重現這種精度。
+
+## 4. Sample Perturbation
+
+**Leave-best-trade-out：**
+- 原始 Sharpe: -1.34
+- 拿掉最佳單根 bar 後 Sharpe: -1.64（下降 22%）
+- 最佳 bar 發生於: 2024-03-01 20:00:00+00:00
+
+**Rolling-window Sharpe（切成不重疊區塊分別計算）：**
+
+| 區間 | Sharpe |
+|---|---|
+| 2024-01-01~2024-01-23 | -1.17 |
+| 2024-01-23~2024-02-14 | 1.82 |
+| 2024-02-15~2024-03-08 | -0.01 |
+| 2024-03-08~2024-03-30 | -5.74 |
+
+- 區塊間 Sharpe 標準差: 3.22
+- 負報酬區塊數: 3/4
+- 判讀：如果績效集中在少數區塊、其餘區塊都是負的，代表這不是穩定存在的 edge，而是某段特殊市場狀況下的偶然結果。
+
+## 5. Parameter-Family Multiple-Testing Correction (Benjamini-Hochberg, α=0.10)
+
+- 本次 parameter candidate family 共有 9 個 trial
+- 未修正前 p<0.10 的 trial 數: 0
+- **BH 修正後仍顯著的 trial 數: 0**
+- Cost stress 和 execution delay 是 robustness diagnostics，不算成新的 alpha hypotheses。
+
+- 判讀：如果 BH 修正後顯著的 trial 數是 0，代表這一整批搜尋沒有找到能通過統計把關的結果——在接近隨機遊走的資料上，這是**正確且預期**的結論，說明整套 falsification 機制正在如實運作，而不是隨便放行任何看起來好看的數字。
